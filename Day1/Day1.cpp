@@ -4,7 +4,8 @@
 #include <vector>
 #include <string>
 /*
-* Day One
+* Day One!
+* Specify Input file in program arguments
 */
 
 int main(int argc, char *argv[])
