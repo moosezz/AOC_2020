@@ -55,6 +55,50 @@ long long int maskInt(int t, string mask)
 	return static_cast<long long int>(is);
 }
 
+void genMemPerms(std::bitset<36> bits, std::vector<int> locations, std::vector<std::bitset<36>>* combinations)
+{
+	auto bit = locations.back();
+	locations.pop_back();
+	auto tbs = bits;
+	auto fbs = bits;
+	tbs[bit] = true;
+	fbs[bit] = false;
+	if (locations.empty())
+	{
+		combinations->emplace_back(tbs);
+		combinations->emplace_back(fbs);
+	}
+	else
+	{
+		genMemPerms(tbs, locations, combinations);
+		genMemPerms(fbs, locations, combinations);
+	}
+}
+
+void maskMemoryLocations(int _mem, string _mask, std::vector<long long int>* _adrstore)
+{
+	std::reverse(_mask.begin(), _mask.end());
+	auto adr = std::bitset<36>(_mem);
+	std::vector<int> floating_bit_locs;
+
+	for (int i = 0; i < 36; ++i)
+	{
+		if (_mask[i] == '1') adr[i] = true;
+		if (_mask[i] == 'X') floating_bit_locs.emplace_back(i);
+	}
+	std::vector<std::bitset<36>> combos;
+
+	genMemPerms(adr, floating_bit_locs, &combos);
+
+	std::vector<long long int> values;
+	for (auto combo : combos)
+	{
+		values.emplace_back(combo.to_ullong());
+	}
+
+	_adrstore->insert(_adrstore->end(), values.begin(), values.end());
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -62,6 +106,7 @@ int main(int argc, char* argv[])
 	if (!(FileLoader::LoadAsStringVector(argv[1], &input))) return 0;
 
 	std::map<int, long long int> memory;
+	std::map<long long int, long long int> p2_memory;
 	std::vector<entry> entries;
 
 	entry curEntry;
@@ -95,10 +140,34 @@ int main(int argc, char* argv[])
 		}
 	}
 
+
 	long long int sum = 0;
 	for (auto m : memory)
 	{
 		sum += m.second;
 	}
 	std::cout << "part 1 sum: " << sum << "\n";
+
+
+	for (auto e : entries)
+	{
+		for (auto m : e.mem)
+		{
+			std::vector<long long int> writeLocs;
+			maskMemoryLocations(m.first, e.mask, &writeLocs);
+
+			for (auto loc : writeLocs)
+			{
+				p2_memory.insert_or_assign(loc, m.second);
+			}
+		}
+	}
+
+	long long int p2sum = 0;
+	for (auto m : p2_memory)
+	{
+		p2sum += m.second;
+	}
+
+	std::cout << "part 2 sum: " << p2sum << "\n";
 }
